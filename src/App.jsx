@@ -58,7 +58,17 @@ function Slots({ bet, onSpin, onBetChange, balance, onPayout }) {
 
   // Roll one reel (returns a promise)
   function roll(reel, offset = 0) {
-    const delta = (offset + 2) * NUM_ICONS + Math.round(Math.random() * NUM_ICONS);
+    // Slightly increase odds for jackpot (3 in a row)
+    let jackpotBias = Math.random();
+    let randomIndex;
+    if (jackpotBias < 0.15 && offset === 2) {
+      // 15% chance to force 3rd reel to match previous two
+      // Will be set in rollAll logic
+      randomIndex = indexes[0];
+    } else {
+      randomIndex = Math.round(Math.random() * NUM_ICONS);
+    }
+    const delta = (offset + 2) * NUM_ICONS + randomIndex;
     return new Promise((resolve) => {
       const style = reel.style;
       const backgroundPositionY = parseFloat(style.backgroundPositionY || '0');
@@ -163,6 +173,9 @@ function Slots({ bet, onSpin, onBetChange, balance, onPayout }) {
     if (typeof onBetChange === 'function') onBetChange(newBet);
   };
 
+  // Add money section state
+  const [addAmount, setAddAmount] = useState(10);
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
       <div className={`slots${winClass ? ' ' + winClass : ''}`}>
@@ -214,6 +227,39 @@ function Slots({ bet, onSpin, onBetChange, balance, onPayout }) {
           Max Bet
         </button>
       </div>
+      {/* Add Money Section */}
+      <div style={{ display: 'flex', justifyContent: 'center', marginTop: 30, width: 390 }}>
+        <div className="add-money-container" style={{ width: '100%' }}>
+          <div className="add-money-label" style={{ fontWeight: 600, marginBottom: 4 }}>Add Money</div>
+          <div className="add-money-row" style={{ display: 'flex', alignItems: 'center', width: '100%' }}>
+            <button
+              className="bet-btn"
+              style={{ flex: 1 }}
+              onClick={() => setAddAmount(Math.max(1, addAmount - 1))}
+            >-</button>
+            <input
+              className="bet-input"
+              type="number"
+              min={1}
+              value={addAmount}
+              onChange={e => setAddAmount(Math.max(1, Number(e.target.value)))}
+              style={{ flex: 2, margin: '0 8px' }}
+            />
+            <button
+              className="bet-btn"
+              style={{ flex: 1 }}
+              onClick={() => setAddAmount(addAmount + 1)}
+            >+</button>
+            <button
+              className="spin-btn"
+              style={{ flex: 3, marginLeft: 12 }}
+              onClick={() => {
+                if (typeof window.onAddMoney === 'function') window.onAddMoney(addAmount);
+              }}
+            >Add</button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
@@ -243,6 +289,13 @@ function App() {
   const handlePayout = (amount) => {
     setBalance(bal => bal + amount);
   };
+  // Add money handler for Add Money section
+  useEffect(() => {
+    window.onAddMoney = (amount) => {
+      setBalance(bal => bal + amount);
+    };
+    return () => { window.onAddMoney = null; };
+  }, []);
 
   return (
     <>
