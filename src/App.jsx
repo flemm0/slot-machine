@@ -277,15 +277,15 @@ function App() {
   const [balance, setBalance] = useState(STARTING_BALANCE);
   const [bet, setBet] = useState(1);
 
-  // Deduct bet from balance on spin
+  // deduct bet from balance on spin
   const handleSpin = () => {
     setBalance(bal => Math.max(0, bal - bet));
   };
-  // Update bet from Slots controls
+  // update bet from Slots controls
   const handleBetChange = (val) => {
     setBet(Math.max(1, Math.min(Number(val), balance)));
   };
-  // Add payout to balance
+  // add payout to balance
   const handlePayout = (amount) => {
     setBalance(bal => bal + amount);
   };
